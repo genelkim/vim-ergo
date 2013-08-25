@@ -110,7 +110,7 @@ syntax cluster prologTerms        contains=prologVariable,prologAtom,prologList,
 			\prologNumber,prologErrorTerm
 
 syntax match   prologQuotedFormat /\~\(\d*[acd\~DeEgfGiknNpqrR@st\|+wW]\|`.t\)/ contained
-syntax region  prologQuoted       start=/'/ end=/'/ contains=prologQuotedFormat,@Spell
+syntax region  prologQuoted       start=/'/ end=/'/ skip=+\\'+ contains=prologQuotedFormat,@Spell
 
 syntax match   prologErrorVariable /\<\(_\|\u\)\w*\>/
 syntax region  prologErrorTerm    start=/\<\(_\|\u\)\w*\>(/ end=/)/
