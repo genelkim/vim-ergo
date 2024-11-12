@@ -1,0 +1,27 @@
+// file socrates.ergo
+man(Socrates).
+mortal(?X) :- man(?X).
+mortal(?X) :- woman(?X).
+
+age(Socrates,56) \and  home(Socrates,Athens).
+student(Socrates,Plato), student(Socrates,Xenophon).
+man(Plato) \and man(Xenophon).
+woman(Safo).
+age(Plato,27).
+age(Xenophon,27).
+age(Safo,55).
+philosopher(Xenophon).
+talksAbout(Xenophon,Xenophon).
+home(father(Socrates),Athens).
+home(father(father(Socrates)),Athens).
+
+avgAge(?AvgAge) :- 
+   ?AvgAge = avg{ ?Y | man(?E), age(?E,?Y) }.
+
+// embedded queries
+?- writeln('Query 1:')@\io, mortal(?X), age(?X,?A), ?A < 56.
+?- writeln('Query 2:')@\io, man(?X), age(?X,?A), ?A < 56.
+
+
+
+

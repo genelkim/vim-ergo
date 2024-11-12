@@ -1,0 +1,152 @@
+/*
+   File: privileges.ergo
+   Author: Michael Kifer, Benjamin Grosof, Janine Bloomfield
+
+   Example of complex access policies.
+
+   Illustrates: object-oriented features
+                HiLog (higher-order features)
+                defeasible reasoning
+*/
+
+
+:- use_argumentation_theory.   // enable defeasibility
+:- symbol_context{print/?,web/?,scan/?,fax/?}. // silence warnings about arities
+
+{print,scan,fax,web} : BasicPrivilege.
+// control is either a basic privilege or a revocation.
+BasicPrivilege :: Control.
+revoke(?priv) : Control :- ?priv:BasicPrivilege.
+
+// A grantable user privilege object has the form control(user)
+?ctrl(?usr):UsrPrivilege :- ?ctrl:Control, ?usr:User.
+
+?yr:Year :- ?yr \in 2002..2020.    // the range of years
+
+// schema of class User
+User[| has_privilege(Year)=>BasicPrivilege |].
+
+// schema of class Admin, a subclass of User
+Admin::User.
+Admin[|controls=>Control, grants(Year)=>UsrPrivilege|].
+
+{Bill,Ann} : User.             // our users
+{Bob,Cara} : Admin.            // our admins
+
+
+// could refine to include years of control
+Bob[controls -> {print,revoke(print)}].    // Bob controls print & revoke print
+Cara[controls -> ?ctrl] :- ?ctrl:Control.  // Cara controls everything
+
+Cara[grants(2007) -> print(Ann)].  // Ann gets print privilege from Cara
+Cara[grants(2007) -> web(Ann)].    // Ann gets web privilege from Cara
+Bob[grants(2009) -> revoke(print)(Ann)].  // Bob revokes Ann's print privilege
+Cara[grants(2010) -> revoke(web)(Ann)].   // Cara revokes Ann's web privilege
+Cara[grants(2018) -> print(Ann)].         // Cara restores Ann's print privilege
+Cara[grants(2006) -> revoke(print)(Bob)]. // Cara yanks Bob's default print 
+                                          // privilege in 2006.
+Bob[grants(2018) -> print(Bob)].   // Bob granted print privilege to himself
+
+
+// Defeasible rule: If one had (or didn''t have) a privilege the year before,
+// assume it rolls into the next year, by default. Unless explicitly changed.
+@{inertia(?yr,?ctrl,?usr)}
+?usr[has_privilege(?yr)->?ctrl] :-
+        ?yr : Year,
+        ?yr1 \is ?yr-1,
+        ?usr[has_privilege(?yr1)->?ctrl].
+
+// Defeasible rule: grant (or revoke) privileges explicitly
+@{grant(?yr,?ctrl,?usr)}
+?usr[has_privilege(?yr)->?ctrl] :-
+        ?admin:Admin[grants(?yr) -> ?ctrl(?usr)],
+        ?admin[controls -> ?ctrl].
+
+// Non-defeasible (strict) rule: any admin has the privilege he controls
+// unless explicitly revoked. This feature could be further refined to
+// take years of control into account
+?usr[has_privilege(?yr)->?ctrl] :-
+        ?yr:Year,
+        ?usr:Admin[controls -> ?ctrl:BasicPrivilege],
+        \naf exists(?yr2)^( ?yr2:Year, ?yr2 =< ?yr,
+                            ?:Admin[grants(?yr2)->revoke(?ctrl)(?usr)]
+                          ).
+
+
+// cannot have a privilege and it being revoked at the same time
+\opposes(?usr[has_privilege(?yr)->revoke(?priv)],
+          ?usr[has_privilege(?yr)->?priv]) :-
+        ?usr:User,
+        ?yr:Year,
+        ?priv:BasicPrivilege.
+        
+// explicit grant/revocation of a overrides inertia
+\overrides(grant(?yr,?ctrl,?usr), inertia(?yr,?ctrl,?usr)) :-
+        ?yr:Year,
+        ?usr:User,
+        ?ctrl:Control.
+
+
+// Query:
+?- Ann[has_privilege(?year)->?privilege].
+
+/*
+?year = 2007
+?privilege = print
+
+?year = 2007
+?privilege = web
+
+?year = 2008
+?privilege = print
+
+?year = 2008
+?privilege = web
+
+?year = 2009
+?privilege = web
+
+?year = 2018
+?privilege = print
+
+?year = 2019
+?privilege = print
+
+?year = 2020
+?privilege = print
+
+8 solution(s) in 0.001 seconds; elapsed time = 0.002
+
+*/
+
+/*
+// Also check out this:
+?- Bob[has_privilege(?year)->?privilege].
+
+?year = 2002
+?privilege = print
+
+?year = 2003
+?privilege = print
+
+?year = 2004
+?privilege = print
+
+?year = 2005
+?privilege = print
+
+?year = 2018
+?privilege = print
+
+?year = 2019
+?privilege = print
+
+?year = 2020
+?privilege = print
+
+7 solution(s) in 0.028 seconds; elapsed time = 0.028
+
+
+// And this:
+?- Cara[has_privilege(?year)->?privilege].  // 76 answers
+*/

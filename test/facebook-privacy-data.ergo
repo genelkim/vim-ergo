@@ -1,0 +1,296 @@
+/*
+   File: facebook-privacy-data.ergo
+   Author: Paul Fodor, Michael Kifer
+
+   Data for facebook-privacy-policy.ergo
+*/
+
+paul:User[
+	relationship -> paul_mary_relationship,
+	relationship -> paul_john_relationship,
+	relationship -> paul_mike_relationship,
+	relationship -> paul_jack_relationship,
+        snoozed -> \#:SnoozeObject[entity->mike,
+                                    until-> "2021-5-30"^^\dt],
+        snoozed -> \#:SnoozeObject[entity->mary,
+                                    until-> "2021-6-30T12:12:24"^^\dt]
+].
+
+paul_mary_relationship:Relationship[
+	type -> spouse,
+	person -> mary
+].
+
+paul_john_relationship:Relationship[
+	type -> child,
+	person -> john
+].
+
+paul_mike_relationship:Relationship[
+	type -> parent,
+	person -> mike
+].
+
+paul_jack_relationship:Relationship[
+	type -> friend,
+	person -> jack
+].
+
+post1:Post[
+        owner->paul,
+	value -> 'I am in Berlin',
+        created_on -> "2009-12-20T12:30:4"^^\dt,
+	visibility -> Family
+].
+photo1:Photo[
+	imageName -> 'Berlin 1',
+        owner->mary,
+        created_on -> "2009-12-22T12:33:44"^^\dt,
+	visibility -> Friend
+].
+
+
+
+mary:User[
+	relationship -> mary_paul_relationship,
+	relationship -> mary_john_relationship,
+	relationship -> mary_mike_relationship,
+	relationship -> mary_jack_relationship,
+	relationship -> mary_jane_relationship
+].
+
+mary_paul_relationship:Relationship[
+	type -> spouse,
+	person -> paul
+].
+
+mary_john_relationship:Relationship[
+	type -> child,
+	person -> john
+].
+
+mary_mike_relationship:Relationship[
+	type -> parent_in_law,
+	person -> mike
+].
+
+mary_jack_relationship:Relationship[
+	type -> friend,
+	person -> jack
+].
+
+mary_jane_relationship:Relationship[
+	type -> friend,
+	person -> jane
+].
+
+post2:Post[
+        owner->mary,
+	value -> 'I am in Berlin',
+	visibility -> Family
+].
+photo2:Photo[
+        owner->paul,
+	imageName -> 'Berlin 1',
+	visibility -> Friend
+].
+
+
+
+john:User[
+	relationship -> john_paul_relationship,
+	relationship -> john_mary_relationship,
+	relationship -> john_mike_relationship,
+	relationship -> john_jasmine_relationship,
+	relationship -> john_sun_relationship,
+        blocked      -> {paul,sun,mike,jasmine}
+].
+
+john_paul_relationship:Relationship[
+	type -> parent,
+	person -> paul
+].
+
+john_mary_relationship:Relationship[
+	type -> parent,
+	person -> mary
+].
+
+john_mike_relationship:Relationship[
+	type -> grandparent,
+	person -> mike
+].
+
+john_jasmine_relationship:Relationship[
+	type -> girlfriend,
+	person -> jasmine
+].
+
+john_sun_relationship:Relationship[
+	type -> friend,
+	person -> sun
+].
+
+post3:Post[
+        owner->john,
+	value -> 'I am in Berlin',
+	visibility -> Family
+].
+
+photo3:Photo[
+        owner->john,
+	imageName -> 'Berlin 1',
+	visibility -> Friend
+].
+
+
+
+
+mike:User[
+	relationship -> mike_paul_relationship,
+	relationship -> mike_mary_relationship,
+	relationship -> mike_john_relationship,
+	relationship -> mike_jack_relationship,
+        blocked->mary
+].
+
+mike_paul_relationship:Relationship[
+	type -> child,
+	person -> paul
+].
+
+mike_mary_relationship:Relationship[
+	type -> child_in_law,
+	person -> mary
+].
+
+mike_john_relationship:Relationship[
+	type -> grandchild,
+	person -> john
+].
+
+mike_jack_relationship:Relationship[
+	type -> friend,
+	person -> jack
+].
+
+post4:Post[
+        owner->mike,
+	value -> 'I am in Berlin',
+	visibility -> Family
+].
+photo4:Photo[
+        owner->mike,
+	imageName -> 'Berlin 1',
+	visibility -> Friend
+].
+
+
+
+
+jack:User[
+	relationship -> jack_paul_relationship,
+	relationship -> jack_mary_relationship,
+	relationship -> jack_mike_relationship
+].
+
+jack_paul_relationship:Relationship[
+	type -> friend,
+	person -> paul
+].
+
+jack_mary_relationship:Relationship[
+	type -> friend,
+	person -> mary
+].
+
+jack_mike_relationship:Relationship[
+	type -> friend,
+	person -> mike
+].
+
+post5:Post[
+        owner->jack,
+	value -> 'I am in Montauk',
+	visibility -> Friend
+].
+
+photo5:Photo[
+        owner->jack,
+	imageName -> 'Montauk 1',
+	visibility -> Friend
+].
+
+
+
+jane:User[
+	relationship -> jane_mary_relationship,
+        blocked->mary
+].
+
+jane_mary_relationship:Relationship[
+	type -> friend,
+	person -> mary
+].
+
+post6:Post[
+        owner->jane,
+	value -> 'I am in USA',
+	visibility -> Friend
+].
+photo6:Photo[
+        owner->jane,
+	imageName -> 'USA 1',
+	visibility -> Self
+].
+
+video6:Video[
+        owner->jane,
+	videoName -> 'youtube 1',
+	visibility -> FriendOfFriend
+].
+
+
+
+jasmine:User[
+	relationship -> jasmine_john_relationship
+].
+
+jasmine_john_relationship:Relationship[
+	type -> boyfriend,
+	person -> john
+].
+
+post7:Post[
+        owner->jane,
+	value -> 'I am in Manhattan',
+	visibility -> Self
+].
+photo7:Photo[
+        owner->jasmine,
+	imageName -> 'Manhattan 1',
+	visibility -> Self
+].
+
+
+sun:User[
+	imageName -> 'Manhattan 1',
+	relationship -> sun_john_relationship
+].
+
+sun_john_relationship:Relationship[
+	type -> friend,
+	person -> john
+].
+
+post8:Post[
+        owner->sun,
+	value -> 'I am in Canada',
+	visibility -> Public
+].
+photo8:Photo[
+        owner->john,
+	imageName -> 'Canada 1',
+	visibility -> FriendOfFriend
+].
+

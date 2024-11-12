@@ -1,0 +1,354 @@
+/*
+   File: facebook-privacy-policy.ergo
+   Author: Michael Kifer, Paul Fodor
+
+   Part of the Facebook Access Policy ca. 2013
+   Prepared for a course/research seminar, then expanded.
+
+   Illustrates: object-oriented features
+                defeasibility
+                use of the dateTime data type
+*/
+
+:- use_argumentation_theory.
+
+// Schema
+
+// Facebook entities that may request access
+User :: Entity.        // access by individual users
+Group :: Entity.       // access by individual groups
+Application :: Entity. // access by specific applications
+
+Entity[|
+   blocked => Entity,
+   snoozed => SnoozeObject
+|].
+
+
+User[|
+   // StringObject, GenderObject, Location, and others are subclasses of
+   // AccessControlled and can have access permissions
+   first_name        => StringObject,
+   last_name         => StringObject,
+   gender     {0..1} => GenderObject,
+   email             => StringObject,
+   birthday   {0..1} => BirthdayObject,
+   userid     {1..1} => StringObject,
+   user_name         => StringObject,
+   telephone         => StringObject,
+   education_history => SchoolAttendance,
+   job_history       => JobHeld, 
+   relationship      => Relationship,
+   transaction       => Transaction,
+   location          => Location,
+   // content posted by the user
+   content           => ContentType,
+   cookie            => Cookie,
+   liked             => LikeContent,     // TODO
+   // Note: timeline is computed
+   timeline          => ContentType
+|].
+
+
+{male,female}:GenderType.
+GenderObject::AccessControlled[|
+    value => GenderType
+|].
+
+{profile_photo,cover_photo}:PhotoType.
+ProfileObject::AccessControlled[|
+	value => PhotoType
+|].
+
+CoverObject::AccessControlled[|
+	value => PhotoType
+|].
+
+
+BirthdayObject::AccessControlled[|
+    value => \date
+|].
+
+Attendance::AccessControlled[|
+    institution {1..1} => \string,
+    start       {0..1} => \date,
+    end         {0..1} => \date,
+    address            => Address
+|].
+
+{SchoolAttendance,JobHeld} :: Attendance.
+
+SchoolAttendance[|
+    status => \string,
+    level  => \string
+|].
+
+JobHeld[|
+    position => \string
+|].
+
+
+Location::AccessControlled[|
+    country    => \string,
+    region     => \string,    // state, province, whatever
+    city       => \string,
+    latitude   => \decimal,
+    longitude  => \decimal
+|].
+
+// general address
+Address :: Location[|
+    street    {0..1} => \string,
+    number    {0..1} => \string,
+    apartment {0..1} => \string,
+    zipcode   {0..1} => \string
+|].
+
+{spouse,parent,child,grandparent,grandchild,child_in_law,parent_in_law} : FamilyRelation.
+{friend,girlfriend,boyfriend} : FriendRelation.
+
+FamilyRelation::Relation.
+FriendRelation::Relation.
+
+Relationship::AccessControlled[|
+    type   => Relation,
+    person => User
+|].
+
+Transaction::AccessControlled[|
+    account => Account,
+    time    => \dateTime,
+    product => Product,
+    amount  => \decimal
+|].
+
+Product[|
+    name    {1..1} => \string,
+    owner          => User,
+    price   {1..1} => \decimal,
+    description    => \string
+|].
+
+Account[|
+    bank_name      {1..1} => \string,
+    account_number {1..1} => \string,
+    created        {1..1} => \date,
+    owner          {1..*} => User
+|].
+
+Cookie[|
+    device     => \string,
+    browser    => \string,
+    os         => \string,
+    location   => Location,
+    IP_address => \string,
+    login      => \string,
+    time       => \dateTime
+|].
+
+
+{Photo,Video,Comment,Note,Group,Event,Link,Post,Message} :: ContentType.
+ContentType::AccessControlled[|
+    // owner,creator,created_on are inherited from AccessControlled
+    //owner         {1..1} => Entity,
+    //creator       {1..1} => Entity,
+    //created_on    {1..1} => \dateTime,
+    visibility         => VisibilityType,
+    parent             => ContentType, // if this obj is a comment on parent
+    description        => \string,
+    comment            => Comment,
+    tags               => Tag
+|].
+
+
+{Public, Family, Friend, FriendOfFriend, Self} : VisibilityType.
+
+Photo[|
+	imageName => \string
+|].
+
+Post[|
+	value => \string,
+	comment => Comment
+|].
+
+{read,post,comment,delete} : AccessType.
+
+// class of all objects access to which can be controlled
+AccessControlled[|
+    owner        {1..1} => Entity,
+    creator      {1..1} => Entity,
+    created_on   {1..1} => \dateTime,
+    permissions(Entity)  => AccessType
+|].
+
+SnoozeObject[|
+    entity => Entity,  // who is to be snoozed
+    until  => \dateTime
+|].
+
+
+// owner can always access - strict rule
+?object[permissions(?accessor) -> ?permission] :-
+        ?object:AccessControlled[owner->?accessor],
+        ?permission:AccessType.
+
+// creator can read or delete
+@{creatorRule}
+?object[permissions(?accessor) -> ?permission] :-
+        ?object:AccessControlled[creator->?accessor],
+        ?permission \in [delete, read].
+
+// for Family-level visibility
+@{familyRule}
+?object[permissions(?accessor) -> ?permission] :-
+        ?object:AccessControlled[owner->?owner],
+        ?owner[relationship->?[type->?:FamilyRelation, person->?accessor]],
+        ?permission \in [read, post, comment].
+
+// for Friend-level visibility
+@{friendRule}
+?object[permissions(?accessor) -> ?permission] :-
+        ?object:AccessControlled[owner->?owner],
+        ?owner[relationship->?[type->?:FriendRelation, person->?accessor]],
+        ?permission \in [read, post, comment].
+
+// for FriendOfFriend-level visibility
+@{friendRule}
+?object[permissions(?accessor) -> ?permission] :-
+        ?object:AccessControlled[owner->?owner],
+        ?owner[relationship->?[type->?:FriendRelation,
+                                person->?[relationship->?:FriendRelation,
+                                           person->?accessor]]],
+        ?permission \in [read, comment].
+
+// inherit permissions from parent  access controlled objects
+@{parentObjRule}
+?object[permissions(?accessor) -> ?permission] :-
+        ?object:AccessControlled[parent->?parentobj],
+        ?parentobj[permissions(?accessor)->?permission].
+
+// blocked users exception
+@{blockedRule}
+\neg ?object[permissions(?accessor) -> ?] :-
+        ?object:AccessControlled[owner->?owner],
+        ?owner[blocked->?accessor].
+
+// snoozed users exception
+@{snoozedRule}
+\neg ?object[permissions(?accessor) -> ?] :-
+        ?object:AccessControlled[owner->?owner],
+        ?owner[snoozed->?[entity->?accessor, until->?snoozeDate]],
+        \dateTime[now->?Now]@\basetype,
+        ?Now[lessThan(?snoozeDate)]@\basetype.
+
+/*
+// not actually necessary because \neg in blockedRule and snoozedRule kills
+// the permissions derived by parentObjRule...creatorRule.
+\overrides(?Overrider,?Overridden) :-
+        ?Overrider  \in [blockedRule,snoozedRule],
+        ?Overridden \in [parentObjRule,friendRule,familyRule,creatorRule].
+*/
+
+// compute user's time line.
+// Can be enhanced to sort by date, creator, etc.
+?user[timeline->?obj] :-
+        ?obj:AccessControlled[permissions(?user) -> read].
+
+
+// load sample data
+?- feedback{off}.
+?- writeln('***** Facebook privacy rules loaded.')@\plg.
+?- [+ 'facebook-privacy-data'].
+?- writeln('***** Data loaded.')@\plg.
+?- feedback{on}.
+
+/*
+Queries:
+   Who can do what with post1. Note: paul is the owner and mary (paul's spouse)
+   and mike (a friend) can't see this post because paul snoozed them.
+
+?- post1[permissions(?who)->?perm].
+
+?who = jack
+?perm = comment
+
+?who = jack
+?perm = post
+
+?who = jack
+?perm = read
+
+?who = john
+?perm = comment
+
+?who = john
+?perm = post
+
+?who = john
+?perm = read
+
+?who = paul
+?perm = comment
+
+?who = paul
+?perm = delete
+
+?who = paul
+?perm = post
+
+?who = paul
+?perm = read
+
+10 solution(s) 
+
+   Who can do what with photo3, owned by john?
+   Note: sun, mike, jasmine,paul are blocked by john, so they do not appear.
+
+?- photo3[permissions(?who)->?perm].
+
+?who = john
+?perm = comment
+
+?who = john
+?perm = delete
+
+?who = john
+?perm = post
+
+?who = john
+?perm = read
+
+?who = mary
+?perm = comment
+
+?who = mary
+?perm = post
+
+?who = mary
+?perm = read
+
+7 solution(s)
+
+
+   What can mary see on her time line? Note, she is snoozed by paul and
+   blocked by jane, mike, so mary can't see those posts on her timeline.
+
+?- mary[timeline->?obj].
+
+?obj = photo1
+
+?obj = photo3
+
+?obj = photo5
+
+?obj = photo8
+
+?obj = post2
+
+?obj = post3
+
+?obj = post5
+
+7 solution(s)
+*/
