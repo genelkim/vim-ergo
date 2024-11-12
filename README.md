@@ -1,15 +1,16 @@
-# Prolog integration for Vim
+# Ergo integration for Vim
 
-Prolog is lacking any sort of functional IDE, besides maybe the Emacs-integration that comes with SWI and Sicstus. Vim has traditionally not been a good editor for Prolog. In fact, it is close to being nothing more than a plain text editor for Proolg.
-
-These files seek to change this. Copy them into your `$VIM_RUNTIME` or just `~/.vim`, preserving the directory structure.
+These files seek to provide some basic syntax highlighting support for ErgoAI in VIM. Copy them into your `$VIM_RUNTIME` or just `~/.vim`, preserving the directory structure.
 
 The files are public domain so far.
 
 ## Feature Highlights
 
-- Accounts for pretty much all of Prolog syntax (including DCGs)
-- Syntactical hints for folding
-- Accounts for the full set of ISO built-in predicates and operators
-- Also features the full set of SWI built-ins.
-- gorgeous fruit-salad-fu for your Prolog
+- Accounts for basic Ergo syntax from tutorials
+- Syntax highlighting at a level similar to the ErgoAI Studio Editor.
+
+## Limitations
+
+- The code has many unnecessary components from the Prolog syntax file that I based this on. As I have little experience writing VIM syntax files, I've left those around to help me in future extensions.
+- Only the files in the test/ folder have been checked. Many of Ergo's extensive features are not yet supported.
+
